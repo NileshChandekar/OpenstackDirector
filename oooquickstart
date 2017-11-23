@@ -1,0 +1,52 @@
+Ref: https://docs.openstack.org/tripleo-quickstart/latest/readme.html
+
+VIRTHOST (base physical Machine) should have at least 16 GB of RAM, preferably 32 GB
+Note: I have tested on 32GB RAM system
+Base OS:
+    1. RHEL 7.4
+    2. Centos 7.3
+  
+Steps for tripleO quickstart minimal container deployment 1-controller & 1-compute(Pike)
+#######################################################################
+
+1. Create a user(say oooq) and give sudo permission
+**************************************************************
+adduser oooq -G wheel
+passwd oooq
+
+2. # login as user and prepare the environment
+*******************************************************
+$ ssh-keygen -t rsa #generate ssh-key for the user
+$ export VIRTHOST=127.0.0.2
+$ ssh-copy-id root@$VIRTHOST #passwordless login to the VIRHOST
+$ ssh root@$VIRTHOST uname -a #check passwordless login enable
+$ bash quickstart.sh --install-deps
+$ sudo yum -y install git
+$ sudo yum update lvm* -y #Required for CentOS only
+$ git clone https://github.com/openstack/tripleo-quickstart.git
+$ cd tripleo-quickstart
+$ mkdir /var/tmp/pike   #create a working directory
+$ export wd=/var/tmp/pike
+
+3. Execute the below deployment command:
+**********************************************************
+CentOS-->     --working-dir $wd -R pike  --config $wd/config/general_config/containers_minimal.yml  -e docker_registry_namespace=tripleopike --teardown all --clean  -v  --tags all $VIRTHOST & 
+
+RHEL---> $nohup bash quickstart.sh  --working-dir $wd -R pike  --config $wd/config/general_config/containers_minimal.yml  -e docker_registry_host=trunk.registry.rdoproject.org -e docker_registry_namespace=pike -e delorean_hash_label=tripleo-ci-testing -e docker_image_tag=tripleo-ci-testing --teardown all --clean  -v  --tags all $VIRTHOST &
+
+
+4. tail -f nohup.out and wait till the script gets completed
+
+5. Access undercloud using below command
+ $ ssh -F $wd/ssh.config.ansible undercloud
+ 
+ 6. Inside undercloud
+  $ docker images #container images will be saved on undercloud repository
+  
+  7. source stackrc and login to the overcloud node using heat-admin user and run below command
+  
+  $sudo docker ps  #you will get list of all running containers
+  
+  Note: You will overcloudrc and undercloudrc files present in stack user home directory on undercloud node. So you can try your regular operations nomarmally.
+  
+  
